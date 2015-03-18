@@ -8,66 +8,62 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.caroline.lzw.util.ByteArray;
 import org.caroline.lzw.util.FileCharWriter;
-import org.caroline.lzw.util.Table;
 
 public class SimpleCompression {
-    private FileCharWriter fileCharWriter;
-    private String[] inputFileNames;
-    private Map<ByteArray, Integer> table;
-    // private static final int TABLE_SIZE = 4096;
+    private static final Logger logger = LogManager
+            .getLogger(SimpleCompression.class);
     private static final int FILE_END_CODE = 4095;
     private static final int CLEAR_CODE = 256;
     private static final int BEGIN_CODE = 257;
     private static final int CODE_WIDE = 12;
     private static int MAX_CODE = (1 << CODE_WIDE) - 1;
+
+    private FileCharWriter fileCharWriter;
+    private String[] inputFileNames;
+    private Map<ByteArray, Integer> table;
     private int curCode;
     private ByteArray w;
-    private boolean isFirstRead = true;
 
     public SimpleCompression(String outputFilename, String[] inputFileNames) {
+        logger.info("Compression module init!");
 
+        logger.info("Init file char writer!");
         fileCharWriter = new FileCharWriter(outputFilename);
         this.inputFileNames = inputFileNames;
     }
 
     public void doCompressionProcess() {
-        System.out.println("Writing head info!");
+        logger.info("Do compression process!");
+
         writeFileHead();
 
         for (int i = 0; i < inputFileNames.length; i++) {
-            System.out.println("Compress file: " + inputFileNames[i] + "!");
-
-            compressSingleFile(inputFileNames[i]);
-
-            if (i == inputFileNames.length - 1) {
-                writeCharToFile(table.get(w));
-            }
-
-            System.out.println("Compress file: " + inputFileNames[i]
-                    + " finished! Write file end mark!");
-            writeCharToFile(FILE_END_CODE);
+            compressSingleFile(inputFileNames[i], i);
         }
 
-        System.out.println("Compression finished!");
+        logger.info("Closing file char writer!");
         fileCharWriter.flush();
         fileCharWriter.close();
+
+        logger.info("Compression finished!");
     }
 
-    private void compressSingleFile(String fileName) {
+    private void compressSingleFile(String fileName, int loc) {
+        logger.info("Compressing file: '" + fileName + "'!");
+
         try {
             InputStream bufferedIn = new BufferedInputStream(
                     new FileInputStream(fileName));
 
-            if (isFirstRead) {
-                System.out.println("Init Enrty table!");
+            if (loc == 0) {
                 initTable();
 
                 int firstByte = bufferedIn.read();
                 w = new ByteArray((byte) firstByte);
-
-                isFirstRead = false;
             }
 
             int curByte;
@@ -87,11 +83,10 @@ public class SimpleCompression {
                     w = new ByteArray((byte) curByte);
                 }
             }
-            // writeCharToFile(table.get(w));
 
-            // System.out.println("Compress file: " + fileName
-            // + " finished! Write file end mark!");
-            // writeCharToFile(FILE_END_CODE);
+            if (loc == inputFileNames.length - 1) {
+                writeCharToFile(table.get(w));
+            }
 
             bufferedIn.close();
         } catch (FileNotFoundException e) {
@@ -99,30 +94,43 @@ public class SimpleCompression {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        writeFileEndCode(fileName);
+    }
+
+    private void writeFileEndCode(String fileName) {
+        logger.info("Compress file: '" + fileName
+                + "' finished! Write file end mark!");
+        writeCharToFile(FILE_END_CODE);
     }
 
     private void writeFileHead() {
+        logger.info("Writing head info!");
+
         for (int i = 0; i < inputFileNames.length; i++) {
-            System.out.println("Write file name: " + inputFileNames[i]
-                    + " into output file!");
+            logger.info("Write file name: '" + inputFileNames[i]
+                    + "' into output file!");
             fileCharWriter.write(inputFileNames[i] + "\n");
         }
 
-        System.out
-                .println("File names writing finished, write return code into output file!");
+        logger.info("File names writing finished, write return code into output file!");
         fileCharWriter.write("\n");
     }
 
     private void writeCharToFile(int x) {
-        System.out.println("Writing encoded char " + x + " into file!");
-        fileCharWriter.write(x, Table.CODE_WIDE);
+        logger.debug("Writing encoded char " + x + " into file!");
+        fileCharWriter.write(x, CODE_WIDE);
     }
 
     private void initTable() {
+        logger.info("Init enrty table!");
+
         curCode = BEGIN_CODE;
         table = new HashMap<ByteArray, Integer>();
-        for (int i = 0; i < 257; i++) {
+        for (int i = 0; i < BEGIN_CODE; i++) {
             table.put(new ByteArray((byte) i), i);
         }
+
+        logger.info("Init enrty table finish!");
     }
 }

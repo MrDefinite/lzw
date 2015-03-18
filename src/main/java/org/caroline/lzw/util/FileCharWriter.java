@@ -8,8 +8,8 @@ import java.io.IOException;
 public class FileCharWriter {
     private BufferedOutputStream out = null;
 
-    private int buffer; // 8-bit buffer of bits to write out
-    private int N; // number of bits remaining in buffer
+    private int buffer;
+    private int N;
 
     public FileCharWriter(String outputFileName) {
         try {
@@ -19,9 +19,6 @@ public class FileCharWriter {
         }
     }
 
-    /**
-     * Write the specified bit to standard output.
-     */
     private void writeBit(boolean bit) {
         // add bit to buffer
         buffer <<= 1;
@@ -34,9 +31,6 @@ public class FileCharWriter {
             clearBuffer();
     }
 
-    /**
-     * Write the 8-bit byte to standard output.
-     */
     private void writeByte(int x) {
         assert x >= 0 && x < 256;
 
@@ -57,8 +51,6 @@ public class FileCharWriter {
         }
     }
 
-    // write out any remaining bits in buffer to standard output, padding with
-    // 0s
     private void clearBuffer() {
         if (N == 0)
             return;
@@ -73,10 +65,6 @@ public class FileCharWriter {
         buffer = 0;
     }
 
-    /**
-     * Flush standard output, padding 0s if number of bits written so far is not
-     * a multiple of 8.
-     */
     public void flush() {
         clearBuffer();
         try {
@@ -86,10 +74,6 @@ public class FileCharWriter {
         }
     }
 
-    /**
-     * Flush and close standard output. Once standard output is closed, you can
-     * no longer write bits to it.
-     */
     public void close() {
         flush();
         try {
@@ -99,32 +83,14 @@ public class FileCharWriter {
         }
     }
 
-    /**
-     * Write the specified bit to standard output.
-     * 
-     * @param x
-     *            the <tt>boolean</tt> to write.
-     */
     public void write(boolean x) {
         writeBit(x);
     }
 
-    /**
-     * Write the 8-bit byte to standard output.
-     * 
-     * @param x
-     *            the <tt>byte</tt> to write.
-     */
     public void write(byte x) {
         writeByte(x & 0xff);
     }
 
-    /**
-     * Write the 32-bit int to standard output.
-     * 
-     * @param x
-     *            the <tt>int</tt> to write.
-     */
     public void write(int x) {
         writeByte((x >>> 24) & 0xff);
         writeByte((x >>> 16) & 0xff);
@@ -132,18 +98,6 @@ public class FileCharWriter {
         writeByte((x >>> 0) & 0xff);
     }
 
-    /**
-     * Write the r-bit int to standard output.
-     * 
-     * @param x
-     *            the <tt>int</tt> to write.
-     * @param r
-     *            the number of relevant bits in the char.
-     * @throws IllegalArgumentException
-     *             if <tt>r</tt> is not between 1 and 32.
-     * @throws IllegalArgumentException
-     *             if <tt>x</tt> is not between 0 and 2<sup>r</sup> - 1.
-     */
     public void write(int x, int r) {
         if (r == 32) {
             write(x);
@@ -160,22 +114,10 @@ public class FileCharWriter {
         }
     }
 
-    /**
-     * Write the 64-bit double to standard output.
-     * 
-     * @param x
-     *            the <tt>double</tt> to write.
-     */
     public void write(double x) {
         write(Double.doubleToRawLongBits(x));
     }
 
-    /**
-     * Write the 64-bit long to standard output.
-     * 
-     * @param x
-     *            the <tt>long</tt> to write.
-     */
     public void write(long x) {
         writeByte((int) ((x >>> 56) & 0xff));
         writeByte((int) ((x >>> 48) & 0xff));
@@ -187,53 +129,21 @@ public class FileCharWriter {
         writeByte((int) ((x >>> 0) & 0xff));
     }
 
-    /**
-     * Write the 32-bit float to standard output.
-     * 
-     * @param x
-     *            the <tt>float</tt> to write.
-     */
     public void write(float x) {
         write(Float.floatToRawIntBits(x));
     }
 
-    /**
-     * Write the 16-bit int to standard output.
-     * 
-     * @param x
-     *            the <tt>short</tt> to write.
-     */
     public void write(short x) {
         writeByte((x >>> 8) & 0xff);
         writeByte((x >>> 0) & 0xff);
     }
 
-    /**
-     * Write the 8-bit char to standard output.
-     * 
-     * @param x
-     *            the <tt>char</tt> to write.
-     * @throws IllegalArgumentException
-     *             if <tt>x</tt> is not betwen 0 and 255.
-     */
     public void write(char x) {
         if (x < 0 || x >= 256)
             throw new IllegalArgumentException("Illegal 8-bit char = " + x);
         writeByte(x);
     }
 
-    /**
-     * Write the r-bit char to standard output.
-     * 
-     * @param x
-     *            the <tt>char</tt> to write.
-     * @param r
-     *            the number of relevant bits in the char.
-     * @throws IllegalArgumentException
-     *             if <tt>r</tt> is not between 1 and 16.
-     * @throws IllegalArgumentException
-     *             if <tt>x</tt> is not between 0 and 2<sup>r</sup> - 1.
-     */
     public void write(char x, int r) {
         if (r == 8) {
             write(x);
@@ -250,32 +160,11 @@ public class FileCharWriter {
         }
     }
 
-    /**
-     * Write the string of 8-bit characters to standard output.
-     * 
-     * @param s
-     *            the <tt>String</tt> to write.
-     * @throws IllegalArgumentException
-     *             if any character in the string is not between 0 and 255.
-     */
     public void write(String s) {
         for (int i = 0; i < s.length(); i++)
             write(s.charAt(i));
     }
 
-    /**
-     * Write the String of r-bit characters to standard output.
-     * 
-     * @param s
-     *            the <tt>String</tt> to write.
-     * @param r
-     *            the number of relevants bits in each character.
-     * @throws IllegalArgumentException
-     *             if r is not between 1 and 16.
-     * @throws IllegalArgumentException
-     *             if any character in the string is not between 0 and
-     *             2<sup>r</sup> - 1.
-     */
     public void write(String s, int r) {
         for (int i = 0; i < s.length(); i++)
             write(s.charAt(i), r);
